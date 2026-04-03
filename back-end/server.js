@@ -17,6 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const isVercel = process.env.VERCEL === '1';
 const server = http.createServer(app);
 
 const allowedOrigins = (
@@ -56,6 +57,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -67,14 +69,16 @@ app.get('/', (_req, res) => {
   res.status(200).json({ message: 'Chat API is running' });
 });
 
-const io = new Server(server, {
-  cors: corsOptions,
-});
+if (!isVercel) {
+  const io = new Server(server, {
+    cors: corsOptions,
+  });
 
-initializeVoiceCallSocket(io);
+  initializeVoiceCallSocket(io);
 
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+  server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
 
 export default app;
