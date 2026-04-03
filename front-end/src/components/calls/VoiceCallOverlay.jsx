@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function IconPhone({ className = "h-5 w-5" }) {
@@ -62,6 +62,16 @@ function VoiceCallOverlay({
   toggleMute,
 }) {
   const navigate = useNavigate();
+  const overlayRef = useRef(null);
+  const dragStateRef = useRef({
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    initialX: 0,
+    initialY: 0,
+  });
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
 
   const partner = incomingCall
     ? {
@@ -97,20 +107,105 @@ function VoiceCallOverlay({
     return callError || "";
   }, [callDuration, callError, callStatus, incomingCall]);
 
+  useEffect(() => {
+    if (!partner && !callError) {
+      setPosition({ x: 0, y: 0 });
+    }
+  }, [callError, partner]);
+
+  useEffect(() => {
+    const handleWindowResize = () => {
+      const overlayElement = overlayRef.current;
+
+      if (!overlayElement) {
+        return;
+      }
+
+      const maxX = Math.max(window.innerWidth - overlayElement.offsetWidth - 12, 0);
+      const maxY = Math.max(window.innerHeight - overlayElement.offsetHeight - 12, 0);
+
+      setPosition((currentPosition) => ({
+        x: Math.min(Math.max(currentPosition.x, 0), maxX),
+        y: Math.min(Math.max(currentPosition.y, 0), maxY),
+      }));
+    };
+
+    window.addEventListener("resize", handleWindowResize);
+    return () => window.removeEventListener("resize", handleWindowResize);
+  }, []);
+
+  const handleDragStart = (event) => {
+    if (window.innerWidth < 640 || !overlayRef.current) {
+      return;
+    }
+
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      initialX: position.x,
+      initialY: position.y,
+    };
+
+    overlayRef.current.setPointerCapture?.(event.pointerId);
+    setIsDragging(true);
+  };
+
+  const handleDragMove = (event) => {
+    if (!isDragging || dragStateRef.current.pointerId !== event.pointerId || !overlayRef.current) {
+      return;
+    }
+
+    const deltaX = event.clientX - dragStateRef.current.startX;
+    const deltaY = event.clientY - dragStateRef.current.startY;
+    const maxX = Math.max(window.innerWidth - overlayRef.current.offsetWidth - 12, 0);
+    const maxY = Math.max(window.innerHeight - overlayRef.current.offsetHeight - 12, 0);
+
+    setPosition({
+      x: Math.min(Math.max(dragStateRef.current.initialX + deltaX, 0), maxX),
+      y: Math.min(Math.max(dragStateRef.current.initialY + deltaY, 0), maxY),
+    });
+  };
+
+  const handleDragEnd = (event) => {
+    if (dragStateRef.current.pointerId !== event.pointerId) {
+      return;
+    }
+
+    overlayRef.current?.releasePointerCapture?.(event.pointerId);
+    dragStateRef.current.pointerId = null;
+    setIsDragging(false);
+  };
+
   if (!incomingCall && !activeCall && !callError) {
     return null;
   }
 
   return (
-    <div className="pointer-events-none fixed inset-x-3 bottom-3 z-[80] flex justify-center sm:inset-x-auto sm:right-5 sm:top-5 sm:bottom-auto">
+    <div className="pointer-events-none fixed inset-x-3 bottom-3 z-[80] flex justify-center sm:inset-0 sm:block">
       <div
-        className="pointer-events-auto w-full max-w-sm rounded-[1.75rem] border p-4 shadow-[0_24px_60px_rgba(15,23,42,0.22)] backdrop-blur-2xl"
+        ref={overlayRef}
+        className="pointer-events-auto w-full max-w-sm rounded-[1.75rem] border p-4 shadow-[0_24px_60px_rgba(15,23,42,0.22)] backdrop-blur-2xl sm:absolute"
         style={{
           borderColor: "var(--panel-border)",
           background:
             "linear-gradient(145deg, rgba(15,23,42,0.92), rgba(30,41,59,0.9))",
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          right: "20px",
+          top: "20px",
+          cursor: isDragging ? "grabbing" : "default",
         }}
       >
+        <div
+          className="mb-3 hidden items-center justify-center sm:flex"
+          onPointerDown={handleDragStart}
+          onPointerMove={handleDragMove}
+          onPointerUp={handleDragEnd}
+          onPointerCancel={handleDragEnd}
+          style={{ cursor: isDragging ? "grabbing" : "grab", touchAction: "none" }}
+        >
+          <div className="h-1.5 w-14 rounded-full bg-white/20" />
+        </div>
         {partner ? (
           <>
             <div className="flex items-center gap-3">

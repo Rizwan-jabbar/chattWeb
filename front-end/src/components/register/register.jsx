@@ -175,7 +175,7 @@ function Register () {
                                                 <div className="flex items-center gap-3 rounded-[1.1rem] border border-white/10 bg-slate-950/70 px-4 py-3 text-slate-400 transition focus-within:border-emerald-400/60 focus-within:ring-2 focus-within:ring-emerald-400/20">
                                                     <IconMail />
                                                     <input
-                                                        className="w-full bg-transparent text-sm tracking-[0.35em] text-white outline-none placeholder:text-slate-500"
+                                                        className="w-full bg-transparent text-sm tracking-[0.35em] text-white outline-none placeholder:text-slate-500 selection:bg-emerald-300 selection:text-slate-950"
                                                         type="text"
                                                         inputMode="numeric"
                                                         maxLength={6}
@@ -193,7 +193,7 @@ function Register () {
                                                 <div className="flex items-center gap-3 rounded-[1.1rem] border border-white/10 bg-slate-950/70 px-4 py-3 text-slate-400 transition focus-within:border-emerald-400/60 focus-within:ring-2 focus-within:ring-emerald-400/20">
                                                     <IconUser />
                                                     <input 
-                                                        className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+                                                        className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500 selection:bg-emerald-300 selection:text-slate-950"
                                                         type="text" 
                                                         placeholder="Choose a username" 
                                                         value={formData.username}
@@ -207,7 +207,7 @@ function Register () {
                                                 <div className="flex items-center gap-3 rounded-[1.1rem] border border-white/10 bg-slate-950/70 px-4 py-3 text-slate-400 transition focus-within:border-emerald-400/60 focus-within:ring-2 focus-within:ring-emerald-400/20">
                                                     <IconMail />
                                                     <input 
-                                                        className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+                                                        className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500 selection:bg-emerald-300 selection:text-slate-950"
                                                         type="email" 
                                                         placeholder="you@example.com" 
                                                         value={formData.email}
@@ -221,7 +221,7 @@ function Register () {
                                                 <div className="flex items-center gap-3 rounded-[1.1rem] border border-white/10 bg-slate-950/70 px-4 py-3 text-slate-400 transition focus-within:border-emerald-400/60 focus-within:ring-2 focus-within:ring-emerald-400/20">
                                                     <IconLock />
                                                     <input 
-                                                        className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+                                                        className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500 selection:bg-emerald-300 selection:text-slate-950"
                                                         type={showPassword ? "text" : "password"} 
                                                         placeholder="Minimum 6 characters" 
                                                         value={formData.password}
@@ -258,14 +258,16 @@ function Register () {
                                         </div>
                                     )}
 
-                                    <button
-                                        type="submit"
-                                        className="flex w-full items-center justify-center gap-2 rounded-[1.1rem] bg-gradient-to-r from-emerald-300 via-cyan-300 to-sky-400 px-4 py-3.5 text-sm font-semibold text-slate-950 transition hover:scale-[0.99] hover:shadow-lg hover:shadow-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-70"
-                                        disabled={loading}
-                                    >
-                                        <IconSpark />
-                                        {loading ? (otpPendingVerification ? "Verifying..." : "Creating account...") : (otpPendingVerification ? "Verify OTP" : "Register")}
-                                    </button>
+                                    <div className="pt-2">
+                                        <button
+                                            type="submit"
+                                            className="flex w-full items-center justify-center gap-2 rounded-[1.1rem] bg-gradient-to-r from-emerald-300 via-cyan-300 to-sky-400 px-4 py-3.5 text-sm font-semibold text-slate-950 transition hover:scale-[0.99] hover:shadow-lg hover:shadow-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-70"
+                                            disabled={loading}
+                                        >
+                                            <IconSpark />
+                                            {loading ? (otpPendingVerification ? "Verifying..." : "Creating account...") : (otpPendingVerification ? "Verify OTP" : "Register")}
+                                        </button>
+                                    </div>
                                 </form>
 
                                 <p className="mt-6 text-center text-xs text-slate-400 sm:text-sm">

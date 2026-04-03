@@ -67,13 +67,16 @@ export const sendEmail = async (to, subject, text) => {
             throw new Error('Email credentials are not configured');
         }
 
+        const smtpPassword = String(process.env.EMAIL_PASS).replace(/\s+/g, '').trim();
+        const smtpUser = String(process.env.EMAIL_USER).trim();
+
         const transporter = nodemailer.createTransport({
             host: 'smtp.gmail.com',
             port: Number(process.env.SMTP_PORT || 465),
             secure: String(process.env.SMTP_SECURE || 'true') === 'true',
             auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
+                user: smtpUser,
+                pass: smtpPassword,
             },
             connectionTimeout: 10000,
             greetingTimeout: 10000,
@@ -81,7 +84,7 @@ export const sendEmail = async (to, subject, text) => {
         });
 
         const mailOptions = {
-            from: `"ChatWeb" <${process.env.EMAIL_USER}>`,
+            from: `"ChatWeb" <${smtpUser}>`,
             to,
             subject,
             text,
