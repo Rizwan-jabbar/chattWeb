@@ -24,14 +24,14 @@ const __dirname = path.dirname(__filename);
 // Check if running on Vercel
 const isVercel = process.env.VERCEL === '1';
 
-// Create HTTP server (needed for Socket.IO)
+// Create HTTP server
 const server = http.createServer(app);
 
 // --------------------
-// ✅ CORS Middleware
+// ✅ CORS Middleware (UPDATED)
 // --------------------
 
-// Allowed origins: local + Vercel frontend(s)
+// Env URLs (optional)
 const allowedOrigins = (
   process.env.FRONTEND_URLS || 'http://localhost:5173'
 )
@@ -39,9 +39,20 @@ const allowedOrigins = (
   .map(origin => origin.trim())
   .filter(Boolean);
 
+// 🔥 SMART ORIGIN CHECK (IMPORTANT)
 const isAllowedOrigin = (origin) => {
-  if (!origin) return true; // non-browser requests
-  return allowedOrigins.includes(origin);
+  if (!origin) return true;
+
+  // Allow localhost
+  if (origin.includes('localhost')) return true;
+
+  // Allow all Vercel deployments (IMPORTANT FIX)
+  if (origin.includes('vercel.app')) return true;
+
+  // Allow custom env URLs
+  if (allowedOrigins.includes(origin)) return true;
+
+  return false;
 };
 
 // Apply CORS headers
@@ -79,18 +90,18 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // --------------------
 app.use('/api', router);
 
-// Root test route
+// Root route
 app.get('/', (_req, res) => {
   res.status(200).json({ message: 'Chat API is running' });
 });
 
 // --------------------
-// ✅ Socket.IO for local / non-Vercel
+// ✅ Socket.IO (local only)
 // --------------------
 if (!isVercel) {
   const io = new Server(server, {
     cors: {
-      origin: allowedOrigins,
+      origin: "*",
       methods: ['GET', 'POST'],
       credentials: true
     },
@@ -104,6 +115,6 @@ if (!isVercel) {
 }
 
 // --------------------
-// ✅ Export app for Vercel
+// ✅ Export for Vercel
 // --------------------
 export default app;
