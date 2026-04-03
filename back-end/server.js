@@ -1,0 +1,45 @@
+
+import express from 'express';
+import dotenv from 'dotenv';
+import connectDB from './db/db.js';
+import router from './routes/router.js';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import http from 'http';
+import { Server } from 'socket.io';
+import { initializeVoiceCallSocket } from './socket/voiceCallSocket.js';
+
+dotenv.config();
+connectDB();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const server = http.createServer(app);
+
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+app.use('/api', router);
+app.get('/', (_req, res) => {
+  res.status(200).json({ message: 'Chat API is running' });
+});
+
+const io = new Server(server, {
+  cors: {
+    origin: true,
+    credentials: true,
+  },
+});
+
+initializeVoiceCallSocket(io);
+
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+export default app;

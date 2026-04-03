@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root,
+  .theme-light {
+    --font-sans: "Aptos", "Segoe UI Variable Text", "Segoe UI", "Tahoma", sans-serif;
+    --font-display: "Aptos Display", "Segoe UI Variable Display", "Segoe UI", "Tahoma", sans-serif;
+    --app-bg: #eff5ff;
+    --app-text: #172033;
+    --shell-bg: rgba(255, 255, 255, 0.62);
+    --shell-border: rgba(148, 163, 184, 0.22);
+    --panel-bg: rgba(255, 255, 255, 0.72);
+    --panel-border: rgba(148, 163, 184, 0.18);
+    --muted-text: #64748b;
+    --soft-text: #475569;
+    --accent: #0891b2;
+    --bubble-incoming: rgba(255, 255, 255, 0.88);
+    --bubble-outgoing: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+    --header-bg: rgba(255, 255, 255, 0.58);
+    --sidebar-bg: rgba(255, 255, 255, 0.6);
+    --overlay-bg: rgba(15, 23, 42, 0.22);
+    --chat-bg:
+      radial-gradient(circle at top, rgba(14, 165, 233, 0.12), transparent 22%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(226, 232, 240, 0.78));
+  }
+
+  .theme-dark {
+    --app-bg: #0f172a;
+    --app-text: #e5eefc;
+    --shell-bg: rgba(15, 23, 42, 0.62);
+    --shell-border: rgba(255, 255, 255, 0.08);
+    --panel-bg: rgba(15, 23, 42, 0.72);
+    --panel-border: rgba(255, 255, 255, 0.08);
+    --muted-text: #94a3b8;
+    --soft-text: #cbd5e1;
+    --accent: #67e8f9;
+    --bubble-incoming: rgba(255, 255, 255, 0.06);
+    --bubble-outgoing: linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%);
+    --header-bg: rgba(15, 23, 42, 0.72);
+    --sidebar-bg: rgba(15, 23, 42, 0.72);
+    --overlay-bg: rgba(2, 6, 23, 0.62);
+    --chat-bg:
+      radial-gradient(circle at top, rgba(34, 211, 238, 0.08), transparent 22%),
+      linear-gradient(180deg, rgba(15, 23, 42, 0.55), rgba(2, 6, 23, 0.72));
+  }
+
+  body {
+    @apply antialiased transition-colors duration-300;
+    background: var(--app-bg);
+    color: var(--app-text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  ::selection {
+    background: rgba(8, 145, 178, 0.18);
+    color: var(--app-text);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: rgba(100, 116, 139, 0.28);
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.42);
+    background-clip: padding-box;
+  }
+
+  @media (max-width: 640px) {
+    body {
+      overscroll-behavior-y: none;
+    }
+  }
+}
