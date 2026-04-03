@@ -19,7 +19,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const server = http.createServer(app);
 
-app.use(cors());
+// CORS for frontend
+app.use(cors({
+  origin: "https://your-frontend.vercel.app",
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
