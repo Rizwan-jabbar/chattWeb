@@ -51,7 +51,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 // Preflight requests
-app.options('*', cors(corsOptions));
+app.options('/{*any}', cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
