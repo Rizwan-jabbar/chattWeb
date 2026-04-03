@@ -1,7 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL 
+import { API_URL } from "../../../utils/apiUrl";
 
 
 export const sendMessage = createAsyncThunk(
