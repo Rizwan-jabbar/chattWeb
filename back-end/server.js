@@ -2,7 +2,6 @@ import express from 'express';
 import dotenv from 'dotenv';
 import connectDB from './db/db.js';
 import router from './routes/router.js';
-import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import http from 'http';
@@ -21,7 +20,7 @@ const server = http.createServer(app);
 
 // ✅ CORS Fix
 const allowedOrigins = (
-  process.env.FRONTEND_URLS || 'https://chatt-web-383h-eofxjtmnt-rizwan-jabbars-projects.vercel.app'
+  process.env.FRONTEND_URLS || 'http://localhost:5173'
 )
   .split(',')
   .map(origin => origin.trim())
@@ -31,23 +30,7 @@ const isAllowedOrigin = (origin) => {
   if (!origin) return true; // non-browser requests
   if (allowedOrigins.includes(origin)) return true;
 
-  try {
-    const { hostname } = new URL(origin);
-    return hostname.endsWith('.vercel.app');
-  } catch {
-    return false;
-  }
-};
-
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (isAllowedOrigin(origin)) return callback(null, true);
-    return callback(null, false);
-  },
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  optionsSuccessStatus: 204,
+  return false;
 };
 
 app.use((req, res, next) => {
@@ -56,7 +39,6 @@ app.use((req, res, next) => {
   if (isAllowedOrigin(origin)) {
     res.header('Access-Control-Allow-Origin', origin || '*');
     res.header('Vary', 'Origin');
-    res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   }
@@ -68,13 +50,10 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(cors(corsOptions));
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.use(router);
 app.use('/api', router);
 
 app.get('/', (_req, res) => {
