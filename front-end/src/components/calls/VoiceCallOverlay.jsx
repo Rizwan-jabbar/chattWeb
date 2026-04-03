@@ -64,7 +64,6 @@ function VoiceCallOverlay({
   const navigate = useNavigate();
   const overlayRef = useRef(null);
   const dragStateRef = useRef({
-    pointerId: null,
     startX: 0,
     startY: 0,
     initialX: 0,
@@ -134,47 +133,54 @@ function VoiceCallOverlay({
     return () => window.removeEventListener("resize", handleWindowResize);
   }, []);
 
+  useEffect(() => {
+    if (!isDragging) {
+      return undefined;
+    }
+
+    const handleMouseMove = (event) => {
+      if (!overlayRef.current) {
+        return;
+      }
+
+      const deltaX = event.clientX - dragStateRef.current.startX;
+      const deltaY = event.clientY - dragStateRef.current.startY;
+      const maxX = Math.max(window.innerWidth - overlayRef.current.offsetWidth - 20, 0);
+      const maxY = Math.max(window.innerHeight - overlayRef.current.offsetHeight - 20, 0);
+
+      setPosition({
+        x: Math.min(Math.max(dragStateRef.current.initialX + deltaX, 0), maxX),
+        y: Math.min(Math.max(dragStateRef.current.initialY + deltaY, 0), maxY),
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging]);
+
   const handleDragStart = (event) => {
     if (window.innerWidth < 640 || !overlayRef.current) {
       return;
     }
 
+    event.preventDefault();
     dragStateRef.current = {
-      pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
       initialX: position.x,
       initialY: position.y,
     };
 
-    overlayRef.current.setPointerCapture?.(event.pointerId);
     setIsDragging(true);
-  };
-
-  const handleDragMove = (event) => {
-    if (!isDragging || dragStateRef.current.pointerId !== event.pointerId || !overlayRef.current) {
-      return;
-    }
-
-    const deltaX = event.clientX - dragStateRef.current.startX;
-    const deltaY = event.clientY - dragStateRef.current.startY;
-    const maxX = Math.max(window.innerWidth - overlayRef.current.offsetWidth - 12, 0);
-    const maxY = Math.max(window.innerHeight - overlayRef.current.offsetHeight - 12, 0);
-
-    setPosition({
-      x: Math.min(Math.max(dragStateRef.current.initialX + deltaX, 0), maxX),
-      y: Math.min(Math.max(dragStateRef.current.initialY + deltaY, 0), maxY),
-    });
-  };
-
-  const handleDragEnd = (event) => {
-    if (dragStateRef.current.pointerId !== event.pointerId) {
-      return;
-    }
-
-    overlayRef.current?.releasePointerCapture?.(event.pointerId);
-    dragStateRef.current.pointerId = null;
-    setIsDragging(false);
   };
 
   if (!incomingCall && !activeCall && !callError) {
@@ -198,11 +204,8 @@ function VoiceCallOverlay({
       >
         <div
           className="mb-3 hidden items-center justify-center sm:flex"
-          onPointerDown={handleDragStart}
-          onPointerMove={handleDragMove}
-          onPointerUp={handleDragEnd}
-          onPointerCancel={handleDragEnd}
-          style={{ cursor: isDragging ? "grabbing" : "grab", touchAction: "none" }}
+          onMouseDown={handleDragStart}
+          style={{ cursor: isDragging ? "grabbing" : "grab" }}
         >
           <div className="h-1.5 w-14 rounded-full bg-white/20" />
         </div>

@@ -132,13 +132,13 @@ function Login () {
                                     </p>
                                 </div>
 
-                                <form onSubmit={handleLogin} className="space-y-4.5">
+                                <form onSubmit={handleLogin} className="space-y-5">
                                     <div className="space-y-2">
                                         <label className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Email Address</label>
                                         <div className="flex items-center gap-3 rounded-[1.1rem] border border-white/10 bg-slate-950/70 px-4 py-3 text-slate-400 transition focus-within:border-cyan-400/60 focus-within:ring-2 focus-within:ring-cyan-400/20">
                                             <IconMail />
                                             <input
-                                                className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+                                                className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500 selection:bg-cyan-300 selection:text-slate-950"
                                                 value={loginData.email}
                                                 onChange={(e) => setLoginData({...loginData, email: e.target.value})}
                                                 type="text"
@@ -152,7 +152,7 @@ function Login () {
                                         <div className="flex items-center gap-3 rounded-[1.1rem] border border-white/10 bg-slate-950/70 px-4 py-3 text-slate-400 transition focus-within:border-cyan-400/60 focus-within:ring-2 focus-within:ring-cyan-400/20">
                                             <IconLock />
                                             <input
-                                                className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+                                                className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500 selection:bg-cyan-300 selection:text-slate-950"
                                                 value={loginData.password}
                                                 onChange={(e) => setLoginData({...loginData, password: e.target.value})}
                                                 type={showPassword ? "text" : "password"}
@@ -169,8 +169,9 @@ function Login () {
                                         </div>
                                     </div>
 
-                                    <div className="">
-                                        <p><Link to="/forgetPassword" className="font-semibold text-cyan-300 transition hover:text-cyan-200 text-[12px]">
+                                    <div className="rounded-[1rem] border border-white/10 bg-slate-950/40 px-4 py-3">
+                                        <p className="text-[12px] text-slate-400">Need help accessing your account?</p>
+                                        <p className="mt-1"><Link to="/forgetPassword" className="font-semibold text-cyan-300 transition hover:text-cyan-200 text-[12px]">
                                             Forgot your password?
                                         </Link></p>
                                     </div>
@@ -187,14 +188,16 @@ function Login () {
                                         </div>
                                     )}
 
-                                    <button
-                                        type="submit"
-                                        className="flex w-full items-center justify-center gap-2 rounded-[1.1rem] bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 px-4 py-3.5 text-sm font-semibold text-slate-950 transition hover:scale-[0.99] hover:shadow-lg hover:shadow-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-70"
-                                        disabled={loading}
-                                    >
-                                        <IconBubble />
-                                        {loading ? "Signing in..." : "Login"}
-                                    </button>
+                                    <div className="pt-1.5">
+                                        <button
+                                            type="submit"
+                                            className="flex w-full items-center justify-center gap-2 rounded-[1.1rem] bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 px-4 py-3.5 text-sm font-semibold text-slate-950 transition hover:scale-[0.99] hover:shadow-lg hover:shadow-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-70"
+                                            disabled={loading}
+                                        >
+                                            <IconBubble />
+                                            {loading ? "Signing in..." : "Login"}
+                                        </button>
+                                    </div>
                                 </form>
 
                                 <p className="mt-6 text-center text-xs text-slate-400 sm:text-sm">
