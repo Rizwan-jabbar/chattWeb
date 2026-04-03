@@ -1,4 +1,3 @@
-
 import express from 'express';
 import dotenv from 'dotenv';
 import connectDB from './db/db.js';
@@ -17,26 +16,23 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Detect if running on Vercel
 const isVercel = process.env.VERCEL === '1';
 const server = http.createServer(app);
 
+// Allowed frontend origins
 const allowedOrigins = (
-  process.env.FRONTEND_URLS ||
-  'https://chatt-web.vercel.app,http://localhost:5173,http://localhost:4173'
+  process.env.FRONTEND_URLS || 'https://chatt-web.vercel.app,http://localhost:5173'
 )
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+// Function to check if origin is allowed
 const isAllowedOrigin = (origin) => {
-  if (!origin) {
-    return true;
-  }
-
-  if (allowedOrigins.includes(origin)) {
-    return true;
-  }
-
+  if (!origin) return true; // non-browser requests
+  if (allowedOrigins.includes(origin)) return true;
   try {
     const { hostname } = new URL(origin);
     return hostname.endsWith('.vercel.app');
@@ -45,33 +41,44 @@ const isAllowedOrigin = (origin) => {
   }
 };
 
+// CORS configuration
 const corsOptions = {
   origin: (origin, callback) => {
     if (isAllowedOrigin(origin)) {
       return callback(null, true);
     }
-
     return callback(new Error('Not allowed by CORS'));
   },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 };
 
+// Apply CORS middleware
 app.use(cors(corsOptions));
-app.options(/.*/, cors(corsOptions));
+app.options('*', cors(corsOptions));
 
+// Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.use(router);
+// API routes
 app.use('/api', router);
+
+// Root route
 app.get('/', (_req, res) => {
   res.status(200).json({ message: 'Chat API is running' });
 });
 
+// Socket.IO only for local / non-Vercel deployments
 if (!isVercel) {
   const io = new Server(server, {
-    cors: corsOptions,
+    cors: {
+      origin: allowedOrigins,
+      methods: ['GET', 'POST'],
+      credentials: true,
+    },
   });
 
   initializeVoiceCallSocket(io);
