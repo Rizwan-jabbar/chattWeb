@@ -10,7 +10,7 @@ import { Server } from 'socket.io';
 import { initializeVoiceCallSocket } from './socket/voiceCallSocket.js';
 
 dotenv.config();
-connectDB();
+await connectDB();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
