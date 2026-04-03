@@ -21,7 +21,7 @@ const server = http.createServer(app);
 
 // ✅ CORS Fix
 const allowedOrigins = (
-  process.env.FRONTEND_URLS || 'https://chatt-web.vercel.app,http://localhost:5173,http://localhost:4173'
+  process.env.FRONTEND_URLS || 'https://chatt-web-383h-eofxjtmnt-rizwan-jabbars-projects.vercel.app'
 )
   .split(',')
   .map(origin => origin.trim())
