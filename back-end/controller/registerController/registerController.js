@@ -50,18 +50,20 @@ const registerUser = async (req , res) => {
             password: hashedPassword,
         });
 
-        await sendEmail(email, "Your OTP Code", `Your OTP code is: ${otp}`);
-
         res.status(201).json({
             message : "OTP sent successfully",
             email
+        });
+
+        sendEmail(email, "Your OTP Code", `Your OTP code is: ${otp}`).catch((error) => {
+            console.error("OTP email failed:", error);
         });
     } catch (error) {
         if (error.name === 'ValidationError') {
             return res.status(400).json({ message: error.message });
         }
 
-        res.status(500).json({ message : "Server error" });
+        res.status(500).json({ message : error.message || "Server error" });
     }
 
 
@@ -114,7 +116,7 @@ const verifyOTP = async (req, res) => {
             }
         });
     } catch (error) {
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: error.message || "Server error" });
     }
 };
 
@@ -150,7 +152,7 @@ const changePassword = async (req, res) => {
 
         res.status(200).json({ message: "Password changed successfully" });
     } catch (error) {
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: error.message || "Server error" });
     }
 };
 
@@ -199,14 +201,16 @@ const forgetPassword = async (req, res) => {
         user.otpExpires = otpExpires;
         await user.save();
 
-        await sendEmail(email, "Your Password Reset OTP", `Your OTP code for password reset is: ${otp}`);
-
         res.status(200).json({
             message: "Password reset OTP sent successfully",
             email
         });
+
+        sendEmail(email, "Your Password Reset OTP", `Your OTP code for password reset is: ${otp}`).catch((error) => {
+            console.error("Password reset OTP email failed:", error);
+        });
     } catch (error) {
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: error.message || "Server error" });
     }
 };
 

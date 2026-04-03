@@ -53,7 +53,7 @@ const registerSlice = createSlice({
             state.error = null;
             state.success = true;
             state.otpPendingVerification = true;
-            state.registeredEmail = action.payload?.user?.email || "";
+            state.registeredEmail = action.payload?.email || action.meta.arg?.email || "";
             state.verificationSuccess = false;
         })  
         .addCase(registerThunk.rejected, (state, action) => {

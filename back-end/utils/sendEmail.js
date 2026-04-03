@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const logoUrl = new URL('../../front-end/public/favicon.svg', import.meta.url);
 const logoPath = fileURLToPath(logoUrl);
@@ -71,12 +72,27 @@ const buildEmailTemplate = ({ subject, text }) => `
 export const sendEmail = async (to, subject, text) => {
     try {
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS,
             },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000,
         });
+
+        const attachments = fs.existsSync(logoPath)
+            ? [
+                  {
+                      filename: 'chatweb-logo.svg',
+                      path: logoPath,
+                      cid: 'chatweb-logo',
+                  },
+              ]
+            : [];
 
         const mailOptions = {
             from: process.env.EMAIL_USER,
@@ -84,14 +100,9 @@ export const sendEmail = async (to, subject, text) => {
             subject,
             text,
             html: buildEmailTemplate({ subject, text }),
-            attachments: [
-                {
-                    filename: 'chatweb-logo.svg',
-                    path: logoPath,
-                    cid: 'chatweb-logo',
-                },
-            ],
+            attachments,
         };
+
         await transporter.sendMail(mailOptions);
     } catch (error) {
         console.error('Error sending email:', error);
