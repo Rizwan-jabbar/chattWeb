@@ -1,9 +1,4 @@
 import nodemailer from 'nodemailer';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-
-const logoUrl = new URL('../../front-end/public/favicon.svg', import.meta.url);
-const logoPath = fileURLToPath(logoUrl);
 
 const escapeHtml = (value = '') =>
     String(value)
@@ -20,12 +15,9 @@ const buildEmailTemplate = ({ subject, text }) => `
     <div style="margin:0;padding:24px 0;background:#f3f7fb;font-family:Segoe UI,Tahoma,Arial,sans-serif;color:#172033;">
         <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid rgba(148,163,184,0.18);border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(15,23,42,0.08);">
             <div style="padding:28px 32px;background:linear-gradient(135deg,#06b6d4 0%,#3b82f6 100%);color:#ffffff;">
-                <div style="display:flex;align-items:center;gap:14px;">
-                    <img src="cid:chatweb-logo" alt="ChatWeb Logo" style="width:52px;height:52px;display:block;border-radius:14px;background:rgba(255,255,255,0.16);padding:6px;" />
-                    <div>
-                        <div style="font-size:22px;font-weight:700;line-height:1.2;">ChatWeb</div>
-                        <div style="font-size:13px;opacity:0.92;margin-top:4px;">Secure messaging, friend connections, and account support</div>
-                    </div>
+                <div>
+                    <div style="font-size:22px;font-weight:700;line-height:1.2;">ChatWeb</div>
+                    <div style="font-size:13px;opacity:0.92;margin-top:4px;">Secure messaging, friend connections, and account support</div>
                 </div>
             </div>
 
@@ -71,10 +63,14 @@ const buildEmailTemplate = ({ subject, text }) => `
 
 export const sendEmail = async (to, subject, text) => {
     try {
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            throw new Error('Email credentials are not configured');
+        }
+
         const transporter = nodemailer.createTransport({
             host: 'smtp.gmail.com',
-            port: 587,
-            secure: false,
+            port: Number(process.env.SMTP_PORT || 465),
+            secure: String(process.env.SMTP_SECURE || 'true') === 'true',
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS,
@@ -84,23 +80,12 @@ export const sendEmail = async (to, subject, text) => {
             socketTimeout: 15000,
         });
 
-        const attachments = fs.existsSync(logoPath)
-            ? [
-                  {
-                      filename: 'chatweb-logo.svg',
-                      path: logoPath,
-                      cid: 'chatweb-logo',
-                  },
-              ]
-            : [];
-
         const mailOptions = {
-            from: process.env.EMAIL_USER,
+            from: `"ChatWeb" <${process.env.EMAIL_USER}>`,
             to,
             subject,
             text,
             html: buildEmailTemplate({ subject, text }),
-            attachments,
         };
 
         await transporter.sendMail(mailOptions);
