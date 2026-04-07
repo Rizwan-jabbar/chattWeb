@@ -69,11 +69,15 @@ export const sendEmail = async (to, subject, text) => {
 
         const smtpPassword = String(process.env.EMAIL_PASS).replace(/\s+/g, '').trim();
         const smtpUser = String(process.env.EMAIL_USER).trim();
+        const smtpHost = String(process.env.SMTP_HOST || 'smtp.gmail.com').trim();
+        const smtpPort = Number(process.env.SMTP_PORT || 465);
+        const smtpSecure = String(process.env.SMTP_SECURE || 'true') === 'true';
+        const fromAddress = String(process.env.EMAIL_FROM || smtpUser).trim();
 
         const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: Number(process.env.SMTP_PORT || 465),
-            secure: String(process.env.SMTP_SECURE || 'true') === 'true',
+            host: smtpHost,
+            port: smtpPort,
+            secure: smtpSecure,
             auth: {
                 user: smtpUser,
                 pass: smtpPassword,
@@ -84,7 +88,7 @@ export const sendEmail = async (to, subject, text) => {
         });
 
         const mailOptions = {
-            from: `"ChatWeb" <${smtpUser}>`,
+            from: `"ChatWeb" <${fromAddress}>`,
             to,
             subject,
             text,
