@@ -135,62 +135,128 @@ const buildTransportAttempts = ({ smtpUser, smtpPassword, smtpHost, smtpPort, sm
     ];
 };
 
-export const sendEmail = async (to, subject, text) => {
-    try {
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            throw new Error('Email credentials are not configured');
-        }
+const sendViaResend = async ({ to, subject, text, html, fromAddress }) => {
+    const resendApiKey = String(process.env.RESEND_API_KEY || '').trim();
 
-        const smtpPassword = String(process.env.EMAIL_PASS).replace(/\s+/g, '').trim();
-        const smtpUser = String(process.env.EMAIL_USER).trim();
-        const smtpHost = String(process.env.SMTP_HOST || '').trim();
-        const smtpPort = Number(process.env.SMTP_PORT || 465);
-        const smtpSecure = parseBooleanEnv(process.env.SMTP_SECURE, true);
-        const fromAddress = String(process.env.EMAIL_FROM || smtpUser).trim();
-        const transportAttempts = buildTransportAttempts({
-            smtpUser,
-            smtpPassword,
-            smtpHost,
-            smtpPort,
-            smtpSecure,
+    if (!resendApiKey) {
+        throw new Error('RESEND_API_KEY is not configured');
+    }
+
+    const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            from: fromAddress,
+            to: [to],
+            subject,
+            text,
+            html,
+        }),
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+        console.error('Resend email failed:', {
+            status: response.status,
+            statusText: response.statusText,
+            data,
         });
 
-        const mailOptions = {
-            from: `"ChatWeb" <${fromAddress}>`,
+        throw new Error(data?.message || data?.error || 'Resend API request failed');
+    }
+
+    return data;
+};
+
+const sendViaSmtp = async ({ to, subject, text, html, fromAddress }) => {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        throw new Error('Email credentials are not configured');
+    }
+
+    const smtpPassword = String(process.env.EMAIL_PASS).replace(/\s+/g, '').trim();
+    const smtpUser = String(process.env.EMAIL_USER).trim();
+    const smtpHost = String(process.env.SMTP_HOST || '').trim();
+    const smtpPort = Number(process.env.SMTP_PORT || 465);
+    const smtpSecure = parseBooleanEnv(process.env.SMTP_SECURE, true);
+    const transportAttempts = buildTransportAttempts({
+        smtpUser,
+        smtpPassword,
+        smtpHost,
+        smtpPort,
+        smtpSecure,
+    });
+
+    const mailOptions = {
+        from: `"ChatWeb" <${fromAddress}>`,
+        to,
+        subject,
+        text,
+        html,
+    };
+
+    let lastError;
+
+    for (const attempt of transportAttempts) {
+        try {
+            const transporter = nodemailer.createTransport({
+                ...attempt.config,
+                connectionTimeout: 10000,
+                greetingTimeout: 10000,
+                socketTimeout: 15000,
+            });
+
+            await transporter.verify();
+            await transporter.sendMail(mailOptions);
+            return;
+        } catch (error) {
+            lastError = error;
+            console.error('Email transport attempt failed:', {
+                attempt: attempt.label,
+                message: error.message,
+                code: error.code,
+                command: error.command,
+                response: error.response,
+                responseCode: error.responseCode,
+            });
+        }
+    }
+
+    throw lastError || new Error('No email transport succeeded');
+};
+
+export const sendEmail = async (to, subject, text) => {
+    try {
+        const html = buildEmailTemplate({ subject, text });
+        const resendFrom = String(process.env.RESEND_FROM || '').trim();
+        const smtpFallbackFrom = String(process.env.EMAIL_FROM || process.env.EMAIL_USER || '').trim();
+        const fromAddress = resendFrom || smtpFallbackFrom;
+
+        if (!fromAddress) {
+            throw new Error('Email sender is not configured');
+        }
+
+        if (process.env.RESEND_API_KEY) {
+            await sendViaResend({
+                to,
+                subject,
+                text,
+                html,
+                fromAddress,
+            });
+            return;
+        }
+
+        await sendViaSmtp({
             to,
             subject,
             text,
-            html: buildEmailTemplate({ subject, text }),
-        };
-
-        let lastError;
-
-        for (const attempt of transportAttempts) {
-            try {
-                const transporter = nodemailer.createTransport({
-                    ...attempt.config,
-                    connectionTimeout: 10000,
-                    greetingTimeout: 10000,
-                    socketTimeout: 15000,
-                });
-
-                await transporter.verify();
-                await transporter.sendMail(mailOptions);
-                return;
-            } catch (error) {
-                lastError = error;
-                console.error('Email transport attempt failed:', {
-                    attempt: attempt.label,
-                    message: error.message,
-                    code: error.code,
-                    command: error.command,
-                    response: error.response,
-                    responseCode: error.responseCode,
-                });
-            }
-        }
-
-        throw lastError || new Error('No email transport succeeded');
+            html,
+            fromAddress,
+        });
     } catch (error) {
         console.error('Error sending email:', error);
         throw new Error('Failed to send email');
