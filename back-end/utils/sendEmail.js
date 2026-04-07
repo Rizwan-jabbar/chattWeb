@@ -61,6 +61,80 @@ const buildEmailTemplate = ({ subject, text }) => `
     </div>
 `;
 
+const parseBooleanEnv = (value, defaultValue) => {
+    if (value === undefined || value === null || value === '') {
+        return defaultValue;
+    }
+
+    return String(value).trim().toLowerCase() === 'true';
+};
+
+const buildTransportAttempts = ({ smtpUser, smtpPassword, smtpHost, smtpPort, smtpSecure }) => {
+    if (smtpHost) {
+        return [
+            {
+                label: `${smtpHost}:${smtpPort}`,
+                config: {
+                    host: smtpHost,
+                    port: smtpPort,
+                    secure: smtpSecure,
+                    auth: {
+                        user: smtpUser,
+                        pass: smtpPassword,
+                    },
+                    tls: {
+                        servername: smtpHost,
+                    },
+                },
+            },
+        ];
+    }
+
+    return [
+        {
+            label: 'gmail-service',
+            config: {
+                service: 'gmail',
+                auth: {
+                    user: smtpUser,
+                    pass: smtpPassword,
+                },
+            },
+        },
+        {
+            label: 'smtp.gmail.com:465',
+            config: {
+                host: 'smtp.gmail.com',
+                port: 465,
+                secure: true,
+                auth: {
+                    user: smtpUser,
+                    pass: smtpPassword,
+                },
+                tls: {
+                    servername: 'smtp.gmail.com',
+                },
+            },
+        },
+        {
+            label: 'smtp.gmail.com:587',
+            config: {
+                host: 'smtp.gmail.com',
+                port: 587,
+                secure: false,
+                requireTLS: true,
+                auth: {
+                    user: smtpUser,
+                    pass: smtpPassword,
+                },
+                tls: {
+                    servername: 'smtp.gmail.com',
+                },
+            },
+        },
+    ];
+};
+
 export const sendEmail = async (to, subject, text) => {
     try {
         if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
@@ -69,22 +143,16 @@ export const sendEmail = async (to, subject, text) => {
 
         const smtpPassword = String(process.env.EMAIL_PASS).replace(/\s+/g, '').trim();
         const smtpUser = String(process.env.EMAIL_USER).trim();
-        const smtpHost = String(process.env.SMTP_HOST || 'smtp.gmail.com').trim();
+        const smtpHost = String(process.env.SMTP_HOST || '').trim();
         const smtpPort = Number(process.env.SMTP_PORT || 465);
-        const smtpSecure = String(process.env.SMTP_SECURE || 'true') === 'true';
+        const smtpSecure = parseBooleanEnv(process.env.SMTP_SECURE, true);
         const fromAddress = String(process.env.EMAIL_FROM || smtpUser).trim();
-
-        const transporter = nodemailer.createTransport({
-            host: smtpHost,
-            port: smtpPort,
-            secure: smtpSecure,
-            auth: {
-                user: smtpUser,
-                pass: smtpPassword,
-            },
-            connectionTimeout: 10000,
-            greetingTimeout: 10000,
-            socketTimeout: 15000,
+        const transportAttempts = buildTransportAttempts({
+            smtpUser,
+            smtpPassword,
+            smtpHost,
+            smtpPort,
+            smtpSecure,
         });
 
         const mailOptions = {
@@ -95,7 +163,34 @@ export const sendEmail = async (to, subject, text) => {
             html: buildEmailTemplate({ subject, text }),
         };
 
-        await transporter.sendMail(mailOptions);
+        let lastError;
+
+        for (const attempt of transportAttempts) {
+            try {
+                const transporter = nodemailer.createTransport({
+                    ...attempt.config,
+                    connectionTimeout: 10000,
+                    greetingTimeout: 10000,
+                    socketTimeout: 15000,
+                });
+
+                await transporter.verify();
+                await transporter.sendMail(mailOptions);
+                return;
+            } catch (error) {
+                lastError = error;
+                console.error('Email transport attempt failed:', {
+                    attempt: attempt.label,
+                    message: error.message,
+                    code: error.code,
+                    command: error.command,
+                    response: error.response,
+                    responseCode: error.responseCode,
+                });
+            }
+        }
+
+        throw lastError || new Error('No email transport succeeded');
     } catch (error) {
         console.error('Error sending email:', error);
         throw new Error('Failed to send email');
